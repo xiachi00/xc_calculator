@@ -8,6 +8,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "httplogic.h"
+
 using namespace std;
 
 #define IP "10.0.4.5"//这个一定要用自己服务器的IP
@@ -26,7 +28,6 @@ void init(const char * file_name) {
     }
     ifile.close();
     message += "\r\n";
-    cout<<"DEBUG:" << message << endl;
 }
 
 
@@ -69,7 +70,6 @@ int main(int argv, char * argc[])
 
 	while (true)//循环接收客户端的请求
 	{
-        init(file_name);
 		//5.创建一个sockaddr_in结构体，用来存储客户机的地址
 		struct sockaddr_in client_addr;
 		socklen_t len = sizeof(client_addr);
@@ -81,17 +81,23 @@ int main(int argv, char * argc[])
 				 << endl;
 			exit(-1);
 		}
+        init(file_name);
 
 		//7.输出客户机的信息
 		char *ip = inet_ntoa(client_addr.sin_addr);
 		cout << "客户机： " << ip << " 连接到本服务器成功!" << endl;
 
 		//8.输出客户机请求的信息
-		char buff[1024] = {0};
-		int size = read(client_fd, buff, sizeof(buff));
-		cout << "Request information:\n"
-			 << buff << endl;
-		cout << size << " bytes" << endl;
+        // 输入client_fd   输出Action Path Args
+        string action, path;
+        map<string, string> args;
+        int ret = httplogic::ProcAccept(client_fd, action, path, args);
+        if (ret != 0) {
+            cout << "ProcAccept Error Ret:" << ret << endl;
+            continue;
+        }
+        cout << "action: " << action << endl;
+        cout << "path: " << path << endl;
 		
 		//9.使用第6步accept()返回socket描述符，即客户机的描述符，进行通信。
 		write(client_fd, message.c_str(), message.size());//返回message
