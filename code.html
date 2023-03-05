@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+   <head>
+      <title>计算器</title>
+   </head>
+   <body>
+      <form>
+         <input type="text" name="input" id="input" readonly>
+         <br>
+         <input type="button" value="C" onclick="clearInput()">
+         <input type="button" value="+" onclick="addToInput('+')">
+         <input type="button" value="-" onclick="addToInput('-')">
+         <input type="button" value="*" onclick="addToInput('*')">
+         <input type="button" value="/" onclick="addToInput('/')">
+         <br>
+         <input type="button" value="7" onclick="addToInput('7')">
+         <input type="button" value="8" onclick="addToInput('8')">
+         <input type="button" value="9" onclick="addToInput('9')">
+         <input type="button" value="4" onclick="addToInput('4')">
+         <input type="button" value="5" onclick="addToInput('5')">
+         <input type="button" value="6" onclick="addToInput('6')">
+         <input type="button" value="1" onclick="addToInput('1')">
+         <input type="button" value="2" onclick="addToInput('2')">
+         <input type="button" value="3" onclick="addToInput('3')">
+         <input type="button" value="0" onclick="addToInput('0')">
+         <input type="button" value="." onclick="addToInput('.')">
+         <input type="button" value="=" onclick="evaluateInput()">
+      </form>
+      <script>
+         function addToInput(val) {
+            document.getElementById('input').value += val;
+         }
+
+         function clearInput() {
+            document.getElementById('input').value = '';
+         }
+
+         function evaluateInput() {
+            document.getElementById('input').value = eval(document.getElementById('input').value);
+         }
+      </script>
+   </body>
+</html>
