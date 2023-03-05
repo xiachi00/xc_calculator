@@ -53,13 +53,16 @@ int ProcResponse(int client_fd, const char *wwwroot, const std::string &action,
         const std::string &path, std::map<std::string, std::string> &args,
         std::string &http_ver, std::map<std::string, std::string> &headers) {
     // 1.响应行
-    string message = http_ver + " 200 OK";
+    string message = http_ver + " 200 OK\r\n";
     // 2.响应头
     if (headers["Accept"].find("text/html") != string::npos) {
+        message += "Content-Type:text/html\r\n";
         if (path == "/" || path.size() == 0) {
-            path = "index.html";
+            path = "/index.html";
         }
-        
+
+    } else (headers["Accept"].find("image/ico") != string::npos) {
+
     }
     /*
 
