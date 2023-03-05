@@ -14,30 +14,13 @@ using namespace std;
 
 #define IP "10.0.4.5"//这个一定要用自己服务器的IP
 
-string message ="";
-void init(const char * file_name) {
-    message="HTTP/1.1 200 OK\r\n";                                    //响应行
-    message+="Content-Type:text/html\r\n";                             //响应头
-    message+="\r\n";                                                   //空行
-    ifstream ifile;
-    ifile.open(file_name, ios::in);
-    string jh;
-    while(getline(ifile,jh))
-    {
-        message += jh + "\n";
-    }
-    ifile.close();
-    message += "\r\n";
-}
-
-
 int main(int argv, char * argc[])
 {
     if (argv < 2) {
-        cout << "Usage: " << argc[0] << " <html>" << " <port>" << endl;
+        cout << "Usage: " << argc[0] << " <wwwroot>" << " <port>" << endl;
         return -1;
     }
-    char * file_name = argc[1];
+    char * wwwroot = argc[1];
     int port = atoi(argc[2]);
 	//1.创建一个socket套接字
 	int local_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -68,6 +51,7 @@ int main(int argv, char * argc[])
 	listen(local_fd, 10);
 	cout << "等待来自客户端的连接...." << endl;
 
+    int ret = 0;
 	while (true)//循环接收客户端的请求
 	{
 		//5.创建一个sockaddr_in结构体，用来存储客户机的地址
@@ -81,7 +65,6 @@ int main(int argv, char * argc[])
 				 << endl;
 			exit(-1);
 		}
-        init(file_name);
 
 		//7.输出客户机的信息
 		char *ip = inet_ntoa(client_addr.sin_addr);
@@ -89,18 +72,20 @@ int main(int argv, char * argc[])
 
 		//8.输出客户机请求的信息
         // 输入client_fd   输出Action Path Args
-        string action, path;
-        map<string, string> args;
-        int ret = httplogic::ProcAccept(client_fd, action, path, args);
+        string action, path, http_ver;
+        map<string, string> args, headers;
+        ret = httplogic::ProcAccept(client_fd, action, path, args, http_ver, headers);
         if (ret != 0) {
             cout << "ProcAccept Error Ret:" << ret << endl;
             continue;
         }
-        cout << "action: " << action << endl;
-        cout << "path: " << path << endl;
-		
+
 		//9.使用第6步accept()返回socket描述符，即客户机的描述符，进行通信。
-		write(client_fd, message.c_str(), message.size());//返回message
+        ret = httplogic::ProcResponse(client_fd, wwwroot, action, path, args, http_ver, headers);
+        if (ret != 0) {
+            cout << "ProcResponse Error Ret:" << ret << endl;
+            continue;
+        }
 
 		//10.关闭sockfd
 		close(client_fd);
