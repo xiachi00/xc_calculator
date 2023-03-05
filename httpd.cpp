@@ -11,7 +11,6 @@
 using namespace std;
 
 #define IP "10.0.4.5"//这个一定要用自己服务器的IP
-// #define port 8080 //监听端口，可以在范围内自由设定
 
 string message ="";
 void init(const char * file_name) {
