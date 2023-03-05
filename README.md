@@ -1,2 +1,2 @@
 # xc_calculator
-asdasdHere we start!
+Here we start!
