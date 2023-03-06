@@ -3,114 +3,84 @@
 #include <iostream>
 #include <sys/socket.h>
 #include <unistd.h>
-
+#include <string>
+#include <vector>
+#include <ostream>
 using namespace std;
+
+ostream & operator << (ostream& os, const httpRequest &obj) {
+    os << "Method: " << obj.method << endl;
+    os <<  "Url: " << obj.url << endl;
+    os << "Version: " << obj.version << endl;
+    os << "Args: " << endl;
+    for (auto &p : obj.args) {
+        os << "     " << p.first << ": " << p.second << endl;
+    }
+    os << "Headers: " << endl;
+    for (auto &p : obj.headers) {
+        os << "     " << p.first << ": " << p.second << endl;
+    }
+    return os;
+}
 
 namespace httplogic {
 
-int ProcAccept(int client_fd, std::string &action,
-    std::string &path, std::map<std::string, std::string> &args,
-    std::string &http_ver, std::map<std::string, std::string> &headers) {
+void Format(string &s) {
+    while (!s.empty() && (s.back() == '\n' || s.back() == '\r')) s.pop_back();
+    if (s.empty()) return;
+    size_t pos = 0;
+    while (pos < s.size() && (s[pos] == '\n' || s[pos] == '\r')) pos += 1;
+    s = s.substr(pos);
+}
+
+vector<string> split(string &str, char c) { // c 为分隔符
+    stringstream ss(str);
+    vector<string> res;
+    string item;
+    while (getline(ss, item, c)) res.push_back(item);
+    return res;
+}
+
+int Request(int client_fd, httpRequest &req) {
     char buff[10240] = {0};
-    int size = read(client_fd, buff, sizeof(buff));
-    stringstream sstream(buff);
-    // 1.响应行  "GET /path?arg1=23&arg2=44 HTTP/1.1"
-    string path_args_str, key, value;
-    sstream >> action >> path_args_str >> http_ver;
-    cout<<"DEBUG:"<<action<<" "<<path_args_str << " " << http_ver <<endl;
-    // cout<<"BUFF:"<<buff<<endl;
-    path = "";
-    args.clear();
-    size_t pos = path_args_str.find('?'), pos2;
-    if (pos != string::npos) {
-        path = path_args_str.substr(0, pos);
-        while(pos != string::npos && pos < path_args_str.size()) {
-            pos2 = path_args_str.find('=', pos);
-            if (pos2 == string::npos) continue;
-            key = path_args_str.substr(pos + 1, pos2 - pos - 1);
-            pos = path_args_str.find('&', pos2);
-            if (pos == string::npos) pos = path_args_str.size();
-            value = path_args_str.substr(pos2 + 1, pos - pos2 - 1);
-            args[key] = value;
-        }
-    } else {
-        path = path_args_str;
-    }
-    // 2.响应头   “Connection: keep-alive\r\nCache-Control: max-age=0\r\n”
+    int len = read(client_fd, buff, sizeof buff);
+    if (len < 0) return -1;
+    stringstream sline(buff);
     string line;
-    while(getline(sstream, line) && line.size()) {
-        while(line.size() && line.back() == '\r') line.pop_back();
-        if (line.size() == 0) continue;
-        pos = line.find(':');
-        key = line.substr(0, pos);
-        value = line.substr(pos + 2);
-        headers[key] = value;
-    }
-    return 0;
-}
-
-int ProcResponse(int client_fd, const char *wwwroot, const std::string &action,
-        const std::string &path, std::map<std::string, std::string> &args,
-        std::string &http_ver, std::map<std::string, std::string> &headers) {
-    // 1.响应行
-    string message = http_ver + " 200 OK\r\n";
-    // 2.响应头
-    if (headers["Accept"].find("text/html") != string::npos) {
-        message += "Content-Type:text/html\r\n";
-        if (path == "/" || path.size() == 0) {
-            path = "/index.html";
-        }
-
-    } else (headers["Accept"].find("image/ico") != string::npos) {
-
-    }
-    /*
-
-    message="HTTP/1.1 200 OK\r\n";                                    //响应行
-    message+="Content-Type:text/html\r\n";                             //响应头
-    message+="\r\n";                                                   //空行
     
-    ifstream ifile;
-    ifile.open(file_name, ios::in);
-    string jh;
-    while(getline(ifile,jh))
-    {
-        message += jh + "\n";
+    //  处理请求行
+    getline(sline, line), Format(line);
+    vector<string> first_line = split(line, ' ');
+
+    req.method = first_line[0];                                // method
+    req.version = first_line[2];                               // version
+    vector<string> url_args = split(first_line[1], '?');
+    req.url = url_args[0];                                     // url
+    vector<string> args = split(url_args[1], '&');
+    vector<string> key_value;                                  
+    for (auto &item : args) {
+        key_value = split(item, '=');
+        key_value.resize(2);
+        req.args[key_value[0]] = key_value[1];                 // args[key] = value
     }
-    ifile.close();
-    message += "\r\n";
 
-
-
-    write(client_fd, message.c_str(), message.size());//返回message
-    */
-    return 0;
+    //  处理请求头
+    while (getline(sline, line)) {
+        Format(line);
+        key_value = split(line, ':');
+        key_value.resize(2);
+        req.headers[key_value[0]] = key_value[1];              // headers[key] = value
+    }
+    cout << req << endl;
 }
 
-};
+int Response(int client_fd, httpResponse& rsp) {
+    
+}
 
-// int main() {
-//     std::string path_args_str("/path?arg1=23&arg2=44&arg3=&arg4=dsad");
-//     cout << path_args_str << endl;
-//     std::string path = "";
-//     std::map<std::string, std::string> args;
-//     size_t pos = path_args_str.find('?');
-//     size_t pos2;
-//     std::string key, value;
-//     if (pos != string::npos) {
-//         path = path_args_str.substr(0, pos);
-//         while(pos != string::npos && pos < path_args_str.size()) {
-//             pos2 = path_args_str.find('=', pos);
-//             if (pos2 == string::npos) continue;
-//             key = path_args_str.substr(pos + 1, pos2 - pos - 1);
-//             pos = path_args_str.find('&', pos2);
-//             if (pos == string::npos) pos = path_args_str.size();
-//             value = path_args_str.substr(pos2 + 1, pos - pos2 - 1);
-//             args[key] = value;
-//         }
-//     } else {
-//         cout<<"66"<<endl;
-//     }
 
-//     return 0;
-// }
+
+
+
+
+}
