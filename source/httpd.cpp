@@ -69,19 +69,27 @@ int main(int argv, char * argc[])
 		char *ip = inet_ntoa(client_addr.sin_addr);
 		cout << "客户机： " << ip << " 连接到本服务器成功!" << endl;
 
+        
+
+
+		//  8.输出客户机请求的信息
         httpRequest req;
-        httplogic::Request(client_fd, req);
+        ret = httplogic::Request(client_fd, req);
+        if (ret < 0) {
+            cout << "Request Error Ret:" << ret << endl;
+            continue;
+        }
+
+        httpResponse rsp;
+        ret = httplogic::Response(client_fd, rsp);
+        if (ret < 0) {
+            cout << "Response Error Ret:" << ret << endl;
+            continue;
+        } else {
+            cout << "Response Correct!" << endl;
+        }
 
 
-		//8.输出客户机请求的信息
-        // 输入client_fd   输出Action Path Args
-        // string action, path, http_ver;
-        // map<string, string> args, headers;
-        // ret = httplogic::ProcAccept(client_fd, action, path, args, http_ver, headers);
-        // if (ret != 0) {
-        //     cout << "ProcAccept Error Ret:" << ret << endl;
-        //     continue;
-        // }
 
 		// //9.使用第6步accept()返回socket描述符，即客户机的描述符，进行通信。
         // ret = httplogic::ProcResponse(client_fd, wwwroot, action, path, args, http_ver, headers);

@@ -72,10 +72,15 @@ int Request(int client_fd, httpRequest &req) {
         req.headers[key_value[0]] = key_value[1];              // headers[key] = value
     }
     cout << req << endl;
+    return 0;
 }
 
 int Response(int client_fd, httpResponse& rsp) {
-    
+    char buff[10240] = {0};
+    int val = send(client_fd, buff, sizeof buff, 0);
+    return val;
+
+    return 0;
 }
 
 
